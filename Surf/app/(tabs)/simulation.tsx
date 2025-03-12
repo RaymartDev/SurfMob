@@ -1,7 +1,9 @@
 import { useState } from "react"
-import { StyleSheet, View, Text, TouchableOpacity } from "react-native"
-import { Play, Anchor, Waypoints } from "lucide-react-native"
+import { StyleSheet, View, Text, TouchableOpacity, Image } from "react-native"
+import { Play, Anchor } from "lucide-react-native"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
+import { LinearGradient } from "expo-linear-gradient"
+import Logo from "./images/logo.png"
 
 const Simulation = () => {
     const [isSimulationActive, setIsSimulationActive] = useState(false)
@@ -17,9 +19,15 @@ const Simulation = () => {
 
     return (
         <SafeAreaProvider >
+            <LinearGradient
+                colors={["#60a5fa", "#e0e7ff", "#a78bfa"]} // Corresponds to from-blue-400, via-indigo-100, to-purple-400
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.container}
+                >
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
-                    <Waypoints color="#0284c7" size={28}/>
+                    <Image source={Logo} style={styles.logo} />
                     <Text style={styles.headerTitle}>Simulation Control</Text>
                 </View>
                 <View style={styles.card}>
@@ -60,6 +68,7 @@ const Simulation = () => {
                     )}
                 </View>
             </SafeAreaView>
+            </LinearGradient>
         </SafeAreaProvider>
     )
 }
@@ -67,21 +76,24 @@ const Simulation = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "white",
+    },
+    logo: {
+        width: 32,
+        height: 32
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         padding: 16,
-        backgroundColor: "white",
+        backgroundColor: "transparent",
         borderBottomWidth: 1,
-        borderBottomColor: "#e2e8f0",
+        borderBottomColor: "#e6e6ff",
     },
     headerTitle: {
         fontSize: 20,
         fontWeight: "bold",
         marginLeft: 12,
-        color: "#0f172a",
+        color: "white",
     },
     card: {
         backgroundColor: "white",

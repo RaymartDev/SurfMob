@@ -1,9 +1,13 @@
 
 import { useState, useEffect } from "react"
 import { StatusBar } from "expo-status-bar"
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch } from "react-native"
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Image } from "react-native"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
-import { Anchor, Activity, AlertTriangle, Package, Navigation, Pause, Play } from "lucide-react-native"
+import { Activity, AlertTriangle, Package, Navigation, Pause, Play, } from "lucide-react-native"
+import { Socket } from 'socket.io-client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import Logo from './images/logo.png';
 
 export default function App() {
     // State for boat status
@@ -11,6 +15,9 @@ export default function App() {
     const [boatState, setBoatState] = useState("Stop") // 'Patrolling', 'Stuck', 'Stop'
     const [hasWeight, setHasWeight] = useState(false)
     const [batteryLevel, setBatteryLevel] = useState(78)
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const [isConnected, setIsConnected] = useState<boolean>(false);
+    const [weight, setWeight] = useState('N/A');  // Initialize weight state
 
     // Simulate changing boat state
     useEffect(() => {
@@ -26,18 +33,6 @@ export default function App() {
     // Function to toggle boat activity
     const toggleBoatActivity = () => {
         setIsActive(!isActive)
-    }
-
-    // Function to simulate boat getting stuck
-    const simulateStuck = () => {
-        if (isActive) {
-            setBoatState("Stuck")
-        }
-    }
-
-    // Function to simulate weight change
-    const toggleWeight = () => {
-        setHasWeight(!hasWeight)
     }
 
     // Get color based on boat state
@@ -56,16 +51,26 @@ export default function App() {
 
     return (
         <SafeAreaProvider>
+            <LinearGradient
+                colors={["#60a5fa", "#e0e7ff", "#a78bfa"]} // Corresponds to from-blue-400, via-indigo-100, to-purple-400
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.container}
+                >
             <SafeAreaView style={styles.container}>
                 <StatusBar style="auto" />
 
                 {/* Header */}
                 <View style={styles.header}>
-                    <Anchor color="#0284c7" size={28} />
+                    <Image source={Logo} style={styles.logo} />
                     <Text style={styles.headerTitle}>Boat Dashboard</Text>
                 </View>
 
+                
+
                 <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+                
+           
                     {/* Main Status Card */}
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
@@ -107,7 +112,7 @@ export default function App() {
                             </Text>
                         </View>
                     </View>
-
+                    
                     {/* Weight Sensor Card */}
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
@@ -117,15 +122,20 @@ export default function App() {
                         <View style={styles.weightContainer}>
                             <View style={styles.weightStatus}>
                                 <Text style={styles.weightLabel}>Current Weight:</Text>
-                                <Text style={styles.weightValue}>3 kg</Text>
+                                {/* Display the scanned weight here */}
+                                <Text style={styles.weightValue}>{weight}</Text>
                             </View>
-                            <View style={[styles.weightIndicator, { backgroundColor: "#70affa" }]}>
-                                <Text style={styles.weightText}>Load Detected</Text>
-                            </View>
+                            {/* Button to trigger weight scan */}
+                            <TouchableOpacity
+                                style={[styles.weightIndicator, { backgroundColor: "#70affa" }]}
+                            >
+                                <Text style={styles.weightText}>Scan Weight</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                 </ScrollView>
             </SafeAreaView>
+            </LinearGradient>
         </SafeAreaProvider>
     )
 }
@@ -133,21 +143,24 @@ export default function App() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "white",
+    },
+    logo: {
+        width: 32,
+        height: 32
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         padding: 16,
-        backgroundColor: "white",
+        backgroundColor: "transparent",
         borderBottomWidth: 1,
-        borderBottomColor: "#e2e8f0",
+        borderBottomColor: "#e6e6ff",
     },
     headerTitle: {
         fontSize: 20,
         fontWeight: "bold",
         marginLeft: 12,
-        color: "#0f172a",
+        color: "white",
     },
     scrollView: {
         flex: 1,
@@ -261,4 +274,36 @@ const styles = StyleSheet.create({
         color: "white",
         fontWeight: "600",
     },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 20,
+      },
+      input: {
+        width: '80%',
+        height: 40,
+        borderColor: 'gray',
+        borderWidth: 1,
+        paddingHorizontal: 10,
+        marginBottom: 20,
+      },
+      buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '80%',
+        marginBottom: 20,
+      },
+      status: {
+        marginTop: 20,
+        fontSize: 16,
+        color: 'gray',
+      },
+      savedIpText: {
+        marginTop: 10,
+        fontSize: 14,
+        color: 'blue',
+      },
+      saveConnectButton: {
+        backgroundColor: "#70affa",
+      }
 })

@@ -1,112 +1,201 @@
-import { View, Text, StatusBar, StyleSheet, Image, TouchableOpacity } from 'react-native'
-import React, { useState } from 'react'
-import { CornerDownLeft, CircleStop, CircleArrowLeft, CircleArrowRight, ChevronsLeftRightEllipsis  } from 'lucide-react-native';
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
+import { View, Text, StatusBar, StyleSheet, TouchableOpacity, Animated, Pressable, Image } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import { CornerDownLeft, CircleStop, CirclePlay, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { io } from "socket.io-client";
+import { Video } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
+import Logo from './images/logo.png';
 
-const control = () => {
+// Initialize Socket.IO connection (update with Raspberry Pi's IP)
+const socket = io("http://192.168.1.17:5000");
+
+const Control = () => {
     const [isActive, setIsActive] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [status, setStatus] = useState('Connecting...');
+    const videoRef = useRef(null);
 
+    const leftScale = useRef(new Animated.Value(1)).current;
+    const rightScale = useRef(new Animated.Value(1)).current;
+    const stopScale = useRef(new Animated.Value(1)).current;
+
+
+    // Function to send command via Socket.IO
+    const sendCommand = (command: string) => {
+        socket.emit(command);
+        console.log(`Command sent: ${command}`);
+    };
+
+    // Boat Activity Toggle
     const toggleBoatActivity = () => {
         setIsActive(!isActive);
-    }
+    };
+
+    // Button Animation Handlers
+    const handlePressIn = (scale: Animated.Value, command: string) => {
+        Animated.spring(scale, { toValue: 0.9, useNativeDriver: true }).start();
+        sendCommand(command);
+    };
+
+    const handlePressOut = (scale: Animated.Value) => {
+        Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
+    };
+
+    // Play/Stop toggle logic
+    const togglePlayPause = () => {
+        setIsPlaying(!isPlaying);
+    };
+
     return (
         <SafeAreaProvider>
+            <LinearGradient
+                colors={["#60a5fa", "#e0e7ff", "#a78bfa"]} // Corresponds to from-blue-400, via-indigo-100, to-purple-400
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.container}
+                >
             <SafeAreaView style={styles.container}>
-                <StatusBar barStyle="dark-content" />
+                <StatusBar barStyle="light-content" />
 
                 {/* Header */}
                 <View style={styles.header}>
-                    <ChevronsLeftRightEllipsis color="#0284c7" size={28}/>
-                    <Text style={styles.headerTitle}>In-Control</Text>
+                    <Image source={Logo} style={styles.logo} />
+                    <Text style={styles.headerTitle}>Boat Controller</Text>
                 </View>
 
-                <Image
-                    source={require('@/app/(tabs)/images/dashboardboat.jpg')}
-                    style={styles.streaming} />
+                {/* Live Video Streaming */}
+                <View style={styles.videoContainer}>
+                    <Video
+                        ref={videoRef}
+                        style={styles.video}
+                        useNativeControls={false}
+                        shouldPlay
+                        isLooping
+                    />
+                </View>
 
-                <View style={styles.card}>
-                    <View style={styles.arrows}>
-                        <CircleArrowLeft size={48} color="#70affa" strokeWidth={1.50} />
-                        <CircleStop size={48} color="#ef4444" strokeWidth={1.50} />
-                        <CircleArrowRight size={48} color="#70affa" strokeWidth={1.50} />
+                {/* Control Buttons */}
+                <View style={styles.controlsContainer}>
+                    <View style={styles.controlButtons}>
+                        {/* Left Button */}
+                        <Pressable onPressIn={() => handlePressIn(leftScale, "left")} onPressOut={() => handlePressOut(leftScale)}>
+                            <Animated.View style={[styles.controlButton, { transform: [{ scale: leftScale }] }]}>
+                                <ChevronLeft size={48} color="#4f46e5" />
+                            </Animated.View>
+                        </Pressable>
+
+                        {/* Play/Stop Button */}
+                        <Pressable
+                            onPressIn={() => handlePressIn(stopScale, isPlaying ? "stop" : "start")}
+                            onPressOut={() => {
+                                handlePressOut(stopScale);
+                                togglePlayPause();
+                            }}
+                        >
+                            <Animated.View style={[styles.controlButton, { transform: [{ scale: stopScale }] }]}>
+                                {isPlaying ? (
+                                    <CircleStop size={48} color="#ef4444" />
+                                ) : (
+                                    <CirclePlay size={48} color="#22c55e" />
+                                )}
+                            </Animated.View>
+                        </Pressable>
+
+                        {/* Right Button */}
+                        <Pressable onPressIn={() => handlePressIn(rightScale, "right")} onPressOut={() => handlePressOut(rightScale)}>
+                            <Animated.View style={[styles.controlButton, { transform: [{ scale: rightScale }] }]}>
+                                <ChevronRight size={48} color="#4f46e5" />
+                            </Animated.View>
+                        </Pressable>
                     </View>
 
+                    {/* Return to Base Button */}
                     <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: isActive ? "#ef4444" : "#70affa" }]}
+                        style={[styles.returnButton, { backgroundColor: isActive ? "#ef4444" : "#4f46e5" }]}
                         onPress={toggleBoatActivity}
                     >
-                        {isActive ? <CircleStop color="white" size={20} /> : <CornerDownLeft color="white" size={20} />}
-                        <Text style={styles.actionButtonText}>{isActive ? "Returning" : "Return to the base"}</Text>
+                        {isActive ? <CircleStop color="white" size={24} /> : <CornerDownLeft color="white" size={24} />}
+                        <Text style={styles.returnButtonText}>{isActive ? "Returning" : "Return to Base"}</Text>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
+            </LinearGradient>
         </SafeAreaProvider>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "white",
+    },
+    logo: {
+        width: 32,
+        height: 32
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         padding: 16,
-        backgroundColor: "white",
+        backgroundColor: "transparent",
         borderBottomWidth: 1,
-        borderBottomColor: "#e2e8f0",
+        borderBottomColor: "#e6e6ff",
     },
     headerTitle: {
         fontSize: 20,
         fontWeight: "bold",
         marginLeft: 12,
-        color: "#0f172a",
+        color: "white",
     },
-    headerText: {
-        fontSize: 22,
-        color: "#9e9e9e",
+    videoContainer: {
+        width: "100%",
+        height: "60%",
+        backgroundColor: "black",
     },
-    streaming: {
-        width: '100%',
-        height: '65%',
+    video: {
+        width: "100%",
+        height: "100%",
+        backgroundColor: "black",
     },
-    arrows: {
-        flexDirection: 'row',
-        justifyContent:  'space-evenly',
-        margin: 16,
+    controlsContainer: {
+        backgroundColor: 'transparent',
+        width: "100%",
+        alignItems: "center",
+        paddingVertical: 20,
     },
-    safeZoneContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
+    controlButtons: {
+        flexDirection: "row",
+        justifyContent: "space-evenly",
+        width: "80%",
+        marginBottom: 20,
     },
-    safeZone: {
-        backgroundColor: 'green',
-        justifyContent: 'center',
-        color: 'white',
-        borderRadius: 20,
-        textAlign: 'center',
-        width: '50%',
-        padding: 8,
-    },
-    card: {
+    controlButton: {
         backgroundColor: "white",
-        borderRadius: 12,
-        padding: 16,
-
+        padding: 12,
+        borderRadius: 50,
+        shadowColor: "#000",
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        elevation: 5,
     },
-    actionButton: {
-        marginTop: 16,
+    returnButton: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        padding: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
         borderRadius: 8,
-        gap: 8,
+        shadowColor: "#000",
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        elevation: 5,
     },
-    actionButtonText: {
+    returnButtonText: {
         color: "white",
-        fontWeight: "600",
+        fontSize: 18,
+        fontWeight: "bold",
+        marginLeft: 8,
     },
-})
-export default control
+});
+
+export default Control;
