@@ -1,309 +1,298 @@
-
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native"
 import { StatusBar } from "expo-status-bar"
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Image } from "react-native"
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
-import { Activity, AlertTriangle, Package, Navigation, Pause, Play, } from "lucide-react-native"
-import { Socket } from 'socket.io-client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient';
-import Logo from './images/logo.png';
+import { Ionicons } from "@expo/vector-icons"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
 
-export default function App() {
-    // State for boat status
-    const [isActive, setIsActive] = useState(false)
-    const [boatState, setBoatState] = useState("Stop") // 'Patrolling', 'Stuck', 'Stop'
-    const [hasWeight, setHasWeight] = useState(false)
-    const [batteryLevel, setBatteryLevel] = useState(78)
-    const [socket, setSocket] = useState<Socket | null>(null);
-    const [isConnected, setIsConnected] = useState<boolean>(false);
-    const [weight, setWeight] = useState('N/A');  // Initialize weight state
+// Define boat states as an enum for better type safety
+type BoatState = "idle" | "patrolling" | "control"
 
-    // Simulate changing boat state
-    useEffect(() => {
-        if (isActive) {
-            setBoatState("Patrolling")
-        } else if(!isActive) {
-            setBoatState("Stop")
-        } else {
-            setBoatState('Stuck')
-        }
-    }, [isActive])
+export default function BoatCommand() {
+  // Use a string state instead of boolean to handle multiple states
+  const [boatState, setBoatState] = useState<BoatState>("idle")
+  const [isActive, setIsActive] = useState(false)
 
-    // Function to toggle boat activity
-    const toggleBoatActivity = () => {
-        setIsActive(!isActive)
+  const toggleBoatStatus = () => {
+    const newActiveState = !isActive
+    setIsActive(newActiveState)
+
+    // Set initial state when activating
+    if (newActiveState) {
+      setBoatState("patrolling")
+    } else {
+      setBoatState("idle")
     }
+  }
 
-    // Get color based on boat state
-    const getStateColor = (state: string) => {
-        switch (state) {
-            case "Patrolling":
-                return "#70affa" // Blue
-            case "Stuck":
-                return "#ef4444" // Red
-            case "Stop":
-                return "#6b7280" // Gray
-            default:
-                return "#6b7280"
+  // Function to change boat state
+  const changeBoatState = (newState: BoatState) => {
+    if (isActive) {
+      setBoatState(newState)
+    }
+  }
+
+  // Get the appropriate status indicator color
+  const getStatusColor = () => {
+    if (!isActive) return styles.statusOff
+    return styles.statusOn
+  }
+
+  // Get the appropriate navigation indicator color and text
+  const getNavigationStyle = () => {
+    switch (boatState) {
+      case "idle":
+        return {
+          style: styles.idleIndicator,
+          text: "Idle",
+        }
+      case "patrolling":
+        return {
+          style: styles.patrollingIndicator,
+          text: "Patrolling",
+        }
+      case "control":
+        return {
+          style: styles.controlIndicator,
+          text: "Control",
         }
     }
+  }
 
-    return (
-        <SafeAreaProvider>
-            <LinearGradient
-                colors={["#60a5fa", "#e0e7ff", "#a78bfa"]} // Corresponds to from-blue-400, via-indigo-100, to-purple-400
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.container}
-                >
-            <SafeAreaView style={styles.container}>
-                <StatusBar style="auto" />
+  // Get the navigation description text
+  const getNavigationDescription = () => {
+    switch (boatState) {
+      case "idle":
+        return "Boat is currently idle and not in operation"
+      case "patrolling":
+        return "Boat is actively patrolling the designated area"
+      case "control":
+        return "Boat is in manual control mode"
+    }
+  }
 
-                {/* Header */}
-                <View style={styles.header}>
-                    <Image source={Logo} style={styles.logo} />
-                    <Text style={styles.headerTitle}>Boat Dashboard</Text>
-                </View>
+  const navStyle = getNavigationStyle()
 
-                
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="light" />
 
-                <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-                
-           
-                    {/* Main Status Card */}
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Activity size={24} color="#0284c7" />
-                            <Text style={styles.cardTitle}>Boat Status</Text>
-                        </View>
-                        <View style={styles.statusContainer}>
-                            <View style={styles.statusItem}>
-                                <Text style={styles.statusLabel}>Active</Text>
-                                <View style={[styles.statusIndicator, { backgroundColor: isActive ? "#70affa" : "#6b7280" }]}>
-                                    <Text style={styles.statusText}>{isActive ? "ON" : "OFF"}</Text>
-                                </View>
-                            </View>
-                        </View>
-                        <TouchableOpacity
-                            style={[styles.actionButton, { backgroundColor: isActive ? "#ef4444" : "#70affa" }]}
-                            onPress={toggleBoatActivity}
-                        >
-                            {isActive ? <Pause color="white" size={20} /> : <Play color="white" size={20} />}
-                            <Text style={styles.actionButtonText}>{isActive ? "Stop Boat" : "Start Boat"}</Text>
-                        </TouchableOpacity>
-                    </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Boat Command</Text>
+        <Text style={styles.subtitle}>Real-time monitoring of{"\n"}emergency supply deliveries.</Text>
+      </View>
 
-                    {/* Boat State Card */}
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Navigation size={24} color="#0284c7" />
-                            <Text style={styles.cardTitle}>Navigation State</Text>
-                        </View>
-                        <View style={styles.stateContainer}>
-                            <View style={[styles.stateIndicator, { backgroundColor: getStateColor(boatState) }]}>
-                                {boatState === "Stuck" && <AlertTriangle color="white" size={20} />}
-                                <Text style={styles.stateText}>{boatState}</Text>
-                            </View>
-                            <Text style={styles.stateDescription}>
-                                {boatState === "Patrolling" && "Boat is actively patrolling the designated area."}
-                                {boatState === "Stuck" && "Boat has encountered an obstacle and needs assistance."}
-                                {boatState === "Stop" && "Boat is currently stopped and not in operation."}
-                            </Text>
-                        </View>
-                    </View>
-                    
-                    {/* Weight Sensor Card */}
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Package size={24} color="#0284c7" />
-                            <Text style={styles.cardTitle}>Weight Sensor</Text>
-                        </View>
-                        <View style={styles.weightContainer}>
-                            <View style={styles.weightStatus}>
-                                <Text style={styles.weightLabel}>Current Weight:</Text>
-                                {/* Display the scanned weight here */}
-                                <Text style={styles.weightValue}>{weight}</Text>
-                            </View>
-                            {/* Button to trigger weight scan */}
-                            <TouchableOpacity
-                                style={[styles.weightIndicator, { backgroundColor: "#70affa" }]}
-                            >
-                                <Text style={styles.weightText}>Scan Weight</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </ScrollView>
-            </SafeAreaView>
-            </LinearGradient>
-        </SafeAreaProvider>
-    )
+      <View style={styles.content}>
+        {/* Status Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={styles.statusContainer}>
+              <Ionicons name="radio-button-on" size={20} color="#0056a6" />
+              <Text style={styles.cardTitle}>Status</Text>
+            </View>
+            <View style={styles.statusRow}>
+              <Text style={styles.statusText}>Active</Text>
+              <View style={[styles.statusIndicator, getStatusColor()]}>
+                <Text style={styles.statusIndicatorText}>{isActive ? "ON" : "OFF"}</Text>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.actionButton, isActive ? styles.stopButton : styles.startButton]}
+            onPress={toggleBoatStatus}
+          >
+            <Text style={styles.actionButtonText}>{isActive ? "Stop Patrolling" : "Commence Patrol"}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Navigation Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={styles.statusContainer}>
+              <MaterialCommunityIcons name="navigation-variant" size={20} color="#0056a6" />
+              <Text style={styles.cardTitle}>Navigation</Text>
+            </View>
+          </View>
+          <View style={styles.navigationStatus}>
+            <View style={[styles.statusIndicator, navStyle.style]}>
+              <Text style={styles.statusIndicatorText}>{navStyle.text}</Text>
+            </View>
+          </View>
+          <Text style={styles.navigationText}>{getNavigationDescription()}</Text>
+        </View>
+
+        {/* Weight Sensor Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={styles.statusContainer}>
+              <MaterialCommunityIcons name="weight" size={20} color="#0056a6" />
+              <Text style={styles.cardTitle}>Weight Sensor</Text>
+            </View>
+          </View>
+          <View style={styles.weightContainer}>
+            <Text style={styles.weightLabel}>Current Weight:</Text>
+            <Text style={styles.weightValue}>3kg</Text>
+          </View>
+          <TouchableOpacity style={styles.loadButton}>
+            <Text style={styles.loadButtonText}>Load Detected</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
+  )
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    logo: {
-        width: 32,
-        height: 32
-    },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        padding: 16,
-        backgroundColor: "transparent",
-        borderBottomWidth: 1,
-        borderBottomColor: "#e6e6ff",
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
-        marginLeft: 12,
-        color: "white",
-    },
-    scrollView: {
-        flex: 1,
-    },
-    contentContainer: {
-        padding: 16,
-        gap: 16,
-    },
-    card: {
-        backgroundColor: "white",
-        borderRadius: 12,
-        padding: 16,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    cardHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 16,
-    },
-    cardTitle: {
-        fontSize: 18,
-        fontWeight: "600",
-        marginLeft: 8,
-        color: "#0f172a",
-    },
-    statusContainer: {
-        gap: 16,
-    },
-    statusItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-    },
-    statusLabel: {
-        fontSize: 16,
-        color: "#334155",
-    },
-    statusIndicator: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-        minWidth: 60,
-        alignItems: "center",
-    },
-    statusText: {
-        color: "white",
-        fontWeight: "600",
-    },
-    stateContainer: {
-        alignItems: "center",
-        gap: 12,
-    },
-    stateIndicator: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        gap: 6,
-    },
-    stateText: {
-        color: "white",
-        fontWeight: "600",
-        fontSize: 16,
-    },
-    stateDescription: {
-        textAlign: "center",
-        color: "#64748b",
-        fontSize: 14,
-    },
-    weightContainer: {
-        gap: 16,
-    },
-    weightStatus: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-    },
-    weightLabel: {
-        fontSize: 16,
-        color: "#334155",
-    },
-    weightIndicator: {
-        padding: 12,
-        borderRadius: 8,
-        alignItems: "center",
-    },
-    weightValue: {
-        fontSize: 18,
-        fontWeight: "600",
-        color: "#0284c7",
-    },
-    weightText: {
-        color: "white",
-        fontWeight: "600",
-    },
-    actionButton: {
-        marginTop: 16,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 12,
-        borderRadius: 8,
-        gap: 8,
-    },
-    actionButtonText: {
-        color: "white",
-        fontWeight: "600",
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 20,
-      },
-      input: {
-        width: '80%',
-        height: 40,
-        borderColor: 'gray',
-        borderWidth: 1,
-        paddingHorizontal: 10,
-        marginBottom: 20,
-      },
-      buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '80%',
-        marginBottom: 20,
-      },
-      status: {
-        marginTop: 20,
-        fontSize: 16,
-        color: 'gray',
-      },
-      savedIpText: {
-        marginTop: 10,
-        fontSize: 14,
-        color: 'blue',
-      },
-      saveConnectButton: {
-        backgroundColor: "#70affa",
-      }
+  container: {
+    flex: 1,
+    backgroundColor: "#0077c2",
+  },
+  header: {
+    paddingTop: 40,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  title: {
+    color: "white",
+    fontSize: 28,
+    textAlign: "center",
+    marginBottom: 5,
+    fontFamily: "Poppins-Bold"
+  },
+  subtitle: {
+    color: "white",
+    fontSize: 16,
+    textAlign: "center",
+    opacity: 0.9,
+    fontFamily: "Poppins-Regular"
+  },
+  content: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 20,
+    paddingTop: 60,
+    borderTopStartRadius: 60,
+    borderTopEndRadius: 60,
+  },
+  card: {
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardHeader: {
+    marginBottom: 15,
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  cardTitle: {
+    fontSize: 16,
+    color: "#0056a6",
+    marginLeft: 8,
+    fontFamily: "Poppins-SemiBold"
+  },
+  statusRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 5,
+  },
+  statusText: {
+    fontSize: 14,
+    color: "#666",
+    marginLeft: 28,
+    fontFamily: "Poppins-Regular",
+  },
+  statusIndicator: {
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 20,
+    minWidth: 50,
+    alignItems: "center",
+  },
+  statusOn: {
+    backgroundColor: "#0077c2",
+  },
+  statusOff: {
+    backgroundColor: "#333",
+  },
+  idleIndicator: {
+    backgroundColor: "#888", // Gray for idle
+  },
+  patrollingIndicator: {
+    backgroundColor: "#0077c2", // Blue for patrolling
+  },
+  controlIndicator: {
+    backgroundColor: "#ff9500", // Orange for control
+  },
+  statusIndicatorText: {
+    color: "white",
+    fontSize: 12,
+    fontFamily: "Poppins-Medium",
+  },
+  actionButton: {
+    borderRadius: 30,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  startButton: {
+    backgroundColor: "#0077c2",
+  },
+  stopButton: {
+    backgroundColor: "#ff3b30",
+  },
+  actionButtonText: {
+    color: "white",
+    fontFamily: "Poppins-Bold",
+    fontSize: 16,
+  },
+  navigationStatus: {
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 10,
+  },
+  navigationText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 15,
+    textAlign: "center",
+    fontFamily: "Poppins-Regular"
+  },
+  weightContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  weightLabel: {
+    fontSize: 14,
+    color: "#666",
+    fontFamily: "Poppins-Regular"
+  },
+  weightValue: {
+    fontSize: 14,
+    color: "#0056a6",
+    fontFamily: "Poppins-SemiBold"
+  },
+  loadButton: {
+    backgroundColor: "#0077c2",
+    borderRadius: 30,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  loadButtonText: {
+    color: "white",
+    fontFamily: "Poppins-Bold",
+    fontSize: 16,
+  },
 })
+

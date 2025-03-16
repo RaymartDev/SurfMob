@@ -1,11 +1,8 @@
 import { View, Text, StatusBar, StyleSheet, TouchableOpacity, Animated, Pressable, Image } from 'react-native';
-import { useState, useRef, useEffect } from 'react';
-import { CornerDownLeft, CircleStop, CirclePlay, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { useState, useRef } from 'react';
+import { CornerDownLeft, CircleStop, CirclePlay, ChevronLeft, ChevronRight, ArrowBigLeft, ArrowBigRight } from 'lucide-react-native';
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { io } from "socket.io-client";
-import { Video } from 'expo-av';
-import { LinearGradient } from 'expo-linear-gradient';
-import Logo from './images/logo.png';
 
 // Initialize Socket.IO connection (update with Raspberry Pi's IP)
 const socket = io("http://192.168.1.17:5000");
@@ -13,13 +10,13 @@ const socket = io("http://192.168.1.17:5000");
 const Control = () => {
     const [isActive, setIsActive] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [status, setStatus] = useState('Connecting...');
     const videoRef = useRef(null);
 
     const leftScale = useRef(new Animated.Value(1)).current;
     const rightScale = useRef(new Animated.Value(1)).current;
     const stopScale = useRef(new Animated.Value(1)).current;
 
+    const Stream = require("./images/streampic.png")
 
     // Function to send command via Socket.IO
     const sendCommand = (command: string) => {
@@ -49,30 +46,20 @@ const Control = () => {
 
     return (
         <SafeAreaProvider>
-            <LinearGradient
-                colors={["#60a5fa", "#e0e7ff", "#a78bfa"]} // Corresponds to from-blue-400, via-indigo-100, to-purple-400
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.container}
-                >
             <SafeAreaView style={styles.container}>
                 <StatusBar barStyle="light-content" />
 
                 {/* Header */}
                 <View style={styles.header}>
-                    <Image source={Logo} style={styles.logo} />
-                    <Text style={styles.headerTitle}>Boat Controller</Text>
+                    <Text style={styles.headerTitle}>Control</Text>
                 </View>
 
                 {/* Live Video Streaming */}
                 <View style={styles.videoContainer}>
-                    <Video
-                        ref={videoRef}
+                    <Image 
+                        source={Stream} 
                         style={styles.video}
-                        useNativeControls={false}
-                        shouldPlay
-                        isLooping
-                    />
+                        />
                 </View>
 
                 {/* Control Buttons */}
@@ -81,7 +68,7 @@ const Control = () => {
                         {/* Left Button */}
                         <Pressable onPressIn={() => handlePressIn(leftScale, "left")} onPressOut={() => handlePressOut(leftScale)}>
                             <Animated.View style={[styles.controlButton, { transform: [{ scale: leftScale }] }]}>
-                                <ChevronLeft size={48} color="#4f46e5" />
+                                <ArrowBigLeft size={48} strokeWidth={2} color="#0077c2" />
                             </Animated.View>
                         </Pressable>
 
@@ -97,7 +84,7 @@ const Control = () => {
                                 {isPlaying ? (
                                     <CircleStop size={48} color="#ef4444" />
                                 ) : (
-                                    <CirclePlay size={48} color="#22c55e" />
+                                    <CirclePlay size={48} color="#0077c2" />
                                 )}
                             </Animated.View>
                         </Pressable>
@@ -105,14 +92,14 @@ const Control = () => {
                         {/* Right Button */}
                         <Pressable onPressIn={() => handlePressIn(rightScale, "right")} onPressOut={() => handlePressOut(rightScale)}>
                             <Animated.View style={[styles.controlButton, { transform: [{ scale: rightScale }] }]}>
-                                <ChevronRight size={48} color="#4f46e5" />
+                                <ArrowBigRight size={48} strokeWidth={2} color="#0077c2" />
                             </Animated.View>
                         </Pressable>
                     </View>
 
                     {/* Return to Base Button */}
                     <TouchableOpacity
-                        style={[styles.returnButton, { backgroundColor: isActive ? "#ef4444" : "#4f46e5" }]}
+                        style={[styles.returnButton, { backgroundColor: isActive ? "#ff3b30" : "#32CD32" }]}
                         onPress={toggleBoatActivity}
                     >
                         {isActive ? <CircleStop color="white" size={24} /> : <CornerDownLeft color="white" size={24} />}
@@ -120,7 +107,6 @@ const Control = () => {
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
-            </LinearGradient>
         </SafeAreaProvider>
     );
 };
@@ -128,22 +114,21 @@ const Control = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: "#0077c2",
     },
     logo: {
         width: 32,
         height: 32
     },
     header: {
-        flexDirection: "row",
         alignItems: "center",
-        padding: 16,
+        paddingTop: 20,
+        paddingBottom: 6,
         backgroundColor: "transparent",
-        borderBottomWidth: 1,
-        borderBottomColor: "#e6e6ff",
     },
     headerTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
+        fontSize: 28,
+        fontFamily: "Poppins-Bold",
         marginLeft: 12,
         color: "white",
     },
@@ -151,11 +136,13 @@ const styles = StyleSheet.create({
         width: "100%",
         height: "60%",
         backgroundColor: "black",
+        borderRadius: 40,
     },
     video: {
         width: "100%",
         height: "100%",
         backgroundColor: "black",
+        borderRadius: 40,
     },
     controlsContainer: {
         backgroundColor: 'transparent',
@@ -182,9 +169,10 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
+        width: '65%',
         paddingVertical: 14,
         paddingHorizontal: 20,
-        borderRadius: 8,
+        borderRadius: 30,
         shadowColor: "#000",
         shadowOpacity: 0.2,
         shadowRadius: 5,
@@ -193,9 +181,20 @@ const styles = StyleSheet.create({
     returnButtonText: {
         color: "white",
         fontSize: 18,
-        fontWeight: "bold",
+        fontFamily: "Poppins-Bold",
         marginLeft: 8,
     },
+    card: {
+        backgroundColor: "white",
+        borderRadius: 15,
+        padding: 15,
+        marginBottom: 15,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      },
 });
 
 export default Control;
