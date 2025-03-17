@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from "react-native"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
@@ -75,7 +75,7 @@ export default function BoatCommand() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
-
+    <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Boat Command</Text>
@@ -138,6 +138,7 @@ export default function BoatCommand() {
           </TouchableOpacity>
         </View>
       </View>
+      </ScrollView>
     </SafeAreaView>
   )
 }
@@ -294,5 +295,9 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Bold",
     fontSize: 16,
   },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  }
 })
 

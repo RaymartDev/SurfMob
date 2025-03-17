@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, Image, SafeAreaView, useWindowDimensions } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, Image, SafeAreaView, useWindowDimensions, ScrollView } from "react-native"
 import { StatusBar } from "expo-status-bar"
 
 interface AssistantProfile {
@@ -41,7 +41,7 @@ export default function AssistScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
-
+    <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.title}>Assist Now</Text>
       </View>
@@ -71,6 +71,7 @@ export default function AssistScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+      </ScrollView>
     </SafeAreaView>
   )
 }
@@ -167,5 +168,9 @@ const styles = StyleSheet.create({
   stopButtonText: {
     color: "white",
   },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 80,
+  }
 })
 

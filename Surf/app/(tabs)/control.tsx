@@ -1,4 +1,4 @@
-import { View, Text, StatusBar, StyleSheet, TouchableOpacity, Animated, Pressable, Image } from 'react-native';
+import { View, Text, StatusBar, StyleSheet, TouchableOpacity, Animated, Pressable, Image, ScrollView } from 'react-native';
 import { useState, useRef } from 'react';
 import { CornerDownLeft, CircleStop, CirclePlay, ChevronLeft, ChevronRight, ArrowBigLeft, ArrowBigRight } from 'lucide-react-native';
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -45,15 +45,14 @@ const Control = () => {
     };
 
     return (
-        <SafeAreaProvider>
             <SafeAreaView style={styles.container}>
                 <StatusBar barStyle="light-content" />
-
+            <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>Control</Text>
                 </View>
-
+                <View style={styles.content}>
                 {/* Live Video Streaming */}
                 <View style={styles.videoContainer}>
                     <Image 
@@ -106,8 +105,10 @@ const Control = () => {
                         <Text style={styles.returnButtonText}>{isActive ? "Returning" : "Return to Base"}</Text>
                     </TouchableOpacity>
                 </View>
+                </View>
+                </ScrollView>
             </SafeAreaView>
-        </SafeAreaProvider>
+            
     );
 };
 
@@ -133,6 +134,7 @@ const styles = StyleSheet.create({
         color: "white",
     },
     videoContainer: {
+        flex: 1,
         width: "100%",
         height: "60%",
         backgroundColor: "black",
@@ -195,6 +197,13 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
       },
+      content: {
+        flex: 1,
+      },
+      scrollContainer: {
+        flexGrow: 1,
+        paddingBottom: 50,
+      }
 });
 
 export default Control;
