@@ -4,6 +4,7 @@ import { HapticTab } from "@/components/HapticTab"
 import { useColorScheme } from "react-native"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { IP_ADDRESS } from "@/constants/IP"
 
 export default function TabLayout() {
   const colorScheme = useColorScheme()

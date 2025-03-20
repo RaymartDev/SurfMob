@@ -1,13 +1,39 @@
 import { View, Text, StatusBar, StyleSheet, TouchableOpacity, Animated, Pressable, Image, ScrollView } from 'react-native';
-import { useState, useRef } from 'react';
-import { CornerDownLeft, CircleStop, CirclePlay, ChevronLeft, ChevronRight, ArrowBigLeft, ArrowBigRight } from 'lucide-react-native';
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { useState, useRef, useCallback } from 'react';
+import { CornerDownLeft, CircleStop, CirclePlay, ArrowBigLeft, ArrowBigRight } from 'lucide-react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { io } from "socket.io-client";
+import { IP_ADDRESS } from '@/constants/IP';
+import { useFocusEffect } from 'expo-router';
 
 // Initialize Socket.IO connection (update with Raspberry Pi's IP)
-const socket = io("http://192.168.1.17:5000");
+const socket = io(IP_ADDRESS);
 
 const Control = () => {
+    useFocusEffect(
+        useCallback(() => {
+          fetch(`${IP_ADDRESS}/status`, { // Ensure the correct endpoint
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ mode: "control" }),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                return response.text().then((text) => {
+                  throw new Error(`HTTP Error ${response.status}: ${text}`);
+                });
+              }
+              return response.json();
+            })
+            .then((data) => console.log("Server Response:", data))
+            .catch((error) => console.error("Fetch Error:", error));
+    
+          return () => {};
+        }, [])
+      );
+
     const [isActive, setIsActive] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const videoRef = useRef(null);
@@ -23,6 +49,19 @@ const Control = () => {
         socket.emit(command);
         console.log(`Command sent: ${command}`);
     };
+
+    const controlLeft = () => {
+        sendCommand("control_left");
+    }
+    const controlRight = () => {
+        sendCommand("control_right");
+    }
+    const controlStop = () => {
+        sendCommand("control_stop");
+    }
+    const controlForward = () => {
+        sendCommand("control_forward");
+    }
 
     // Boat Activity Toggle
     const toggleBoatActivity = () => {
@@ -65,7 +104,13 @@ const Control = () => {
                 <View style={styles.controlsContainer}>
                     <View style={styles.controlButtons}>
                         {/* Left Button */}
-                        <Pressable onPressIn={() => handlePressIn(leftScale, "left")} onPressOut={() => handlePressOut(leftScale)}>
+                        <Pressable onPressIn={() => {
+                            handlePressIn(leftScale, "left")
+                            controlLeft()
+                        }} onPressOut={() => {
+                            handlePressOut(leftScale)
+                            controlForward()
+                        }}>
                             <Animated.View style={[styles.controlButton, { transform: [{ scale: leftScale }] }]}>
                                 <ArrowBigLeft size={48} strokeWidth={2} color="#0077c2" />
                             </Animated.View>
@@ -73,7 +118,14 @@ const Control = () => {
 
                         {/* Play/Stop Button */}
                         <Pressable
-                            onPressIn={() => handlePressIn(stopScale, isPlaying ? "stop" : "start")}
+                            onPressIn={() => {
+                                handlePressIn(stopScale, isPlaying ? "stop" : "start")
+                                if(isPlaying) {
+                                    controlStop()
+                                } else {
+                                    controlForward()
+                                }
+                            }}
                             onPressOut={() => {
                                 handlePressOut(stopScale);
                                 togglePlayPause();
@@ -89,7 +141,13 @@ const Control = () => {
                         </Pressable>
 
                         {/* Right Button */}
-                        <Pressable onPressIn={() => handlePressIn(rightScale, "right")} onPressOut={() => handlePressOut(rightScale)}>
+                        <Pressable onPressIn={() => {
+                            handlePressIn(rightScale, "right")
+                            controlRight()
+                        }} onPressOut={() => {
+                            handlePressOut(rightScale)
+                            controlForward()
+                        }}>
                             <Animated.View style={[styles.controlButton, { transform: [{ scale: rightScale }] }]}>
                                 <ArrowBigRight size={48} strokeWidth={2} color="#0077c2" />
                             </Animated.View>
