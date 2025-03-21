@@ -1,6 +1,6 @@
 import { View, Text, StatusBar, StyleSheet, TouchableOpacity, Animated, Pressable, Image, ScrollView } from 'react-native';
 import { useState, useRef, useCallback } from 'react';
-import { CornerDownLeft, CircleStop, CirclePlay, ArrowBigLeft, ArrowBigRight } from 'lucide-react-native';
+import { CornerDownLeft, CircleStop, CirclePlay, ArrowBigLeft, ArrowBigRight, ArrowBigDown, ArrowBigUp } from 'lucide-react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { io } from "socket.io-client";
 import { IP_ADDRESS } from '@/constants/IP';
@@ -36,11 +36,13 @@ const Control = () => {
 
     const [isActive, setIsActive] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isReversing, setIsReversing] = useState(false);
     const videoRef = useRef(null);
 
     const leftScale = useRef(new Animated.Value(1)).current;
     const rightScale = useRef(new Animated.Value(1)).current;
     const stopScale = useRef(new Animated.Value(1)).current;
+    const reverseScale = useRef(new Animated.Value(1)).current;
 
     const Stream = require("./images/streampic.png")
 
@@ -62,6 +64,9 @@ const Control = () => {
     const controlForward = () => {
         sendCommand("control_forward");
     }
+    const controlReverse = () => {
+        sendCommand("control_reverse");
+    }
 
     // Boat Activity Toggle
     const toggleBoatActivity = () => {
@@ -81,6 +86,10 @@ const Control = () => {
     // Play/Stop toggle logic
     const togglePlayPause = () => {
         setIsPlaying(!isPlaying);
+    };
+    // Play/Stop toggle logic
+    const toggleForwardReverse = () => {
+        setIsReversing(!isReversing);
     };
 
     return (
@@ -109,7 +118,11 @@ const Control = () => {
                             controlLeft()
                         }} onPressOut={() => {
                             handlePressOut(leftScale)
-                            controlForward()
+                            if (isPlaying) {
+                                controlForward()
+                            } else {
+                                controlStop()
+                            }
                         }}>
                             <Animated.View style={[styles.controlButton, { transform: [{ scale: leftScale }] }]}>
                                 <ArrowBigLeft size={48} strokeWidth={2} color="#0077c2" />
@@ -146,14 +159,42 @@ const Control = () => {
                             controlRight()
                         }} onPressOut={() => {
                             handlePressOut(rightScale)
-                            controlForward()
+                            if (isPlaying) {
+                                controlForward()
+                            } else {
+                                controlStop()
+                            }
                         }}>
                             <Animated.View style={[styles.controlButton, { transform: [{ scale: rightScale }] }]}>
                                 <ArrowBigRight size={48} strokeWidth={2} color="#0077c2" />
                             </Animated.View>
                         </Pressable>
                     </View>
-
+                        {/* Play/Stop Button */}
+                        <View style={styles.controlButtons}>
+                        <Pressable
+                            onPressIn={() => {
+                                handlePressIn(reverseScale, !isReversing ? "Reversing" : "Forward")
+                                if(!isReversing) {
+                                    controlReverse()
+                                } else {
+                                    controlForward()
+                                }
+                            }}
+                            onPressOut={() => {
+                                handlePressOut(reverseScale);
+                                toggleForwardReverse();
+                            }}
+                        >
+                            <Animated.View style={[styles.controlButton, { transform: [{ scale: reverseScale }] }]}>
+                                {isReversing ? (
+                                    <ArrowBigUp size={48} color="#0077c2" />
+                                ) : (
+                                    <ArrowBigDown size={48} color="#0077c2" />
+                                )}
+                            </Animated.View>
+                        </Pressable>
+                        </View>
                     {/* Return to Base Button */}
                     <TouchableOpacity
                         style={[styles.returnButton, { backgroundColor: isActive ? "#ff3b30" : "#32CD32" }]}
@@ -192,7 +233,6 @@ const styles = StyleSheet.create({
         color: "white",
     },
     videoContainer: {
-        flex: 1,
         width: "100%",
         height: "60%",
         backgroundColor: "black",
