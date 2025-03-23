@@ -3,11 +3,11 @@ import { useState, useRef, useCallback } from 'react';
 import { CornerDownLeft, CircleStop, CirclePlay, ArrowBigLeft, ArrowBigRight, ArrowBigDown, ArrowBigUp } from 'lucide-react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { io } from "socket.io-client";
-import { IP_ADDRESS } from '@/constants/IP';
+import { IP_ADDRESS, IP_ADDRESS_SOCKET } from '@/constants/IP';
 import { useFocusEffect } from 'expo-router';
 
 // Initialize Socket.IO connection (update with Raspberry Pi's IP)
-const socket = io(IP_ADDRESS);
+const socket = io(IP_ADDRESS_SOCKET);
 
 const Control = () => {
     useFocusEffect(
@@ -115,11 +115,17 @@ const Control = () => {
                         {/* Left Button */}
                         <Pressable onPressIn={() => {
                             handlePressIn(leftScale, "left")
-                            controlLeft()
+                            if(isPlaying) {
+                                controlLeft()
+                            }
                         }} onPressOut={() => {
                             handlePressOut(leftScale)
                             if (isPlaying) {
-                                controlForward()
+                                if (isReversing) {
+                                    controlReverse()
+                                } else {
+                                    controlForward()
+                                }
                             } else {
                                 controlStop()
                             }
@@ -134,6 +140,7 @@ const Control = () => {
                             onPressIn={() => {
                                 handlePressIn(stopScale, isPlaying ? "stop" : "start")
                                 if(isPlaying) {
+                                    setIsReversing(false)
                                     controlStop()
                                 } else {
                                     controlForward()
@@ -156,11 +163,17 @@ const Control = () => {
                         {/* Right Button */}
                         <Pressable onPressIn={() => {
                             handlePressIn(rightScale, "right")
-                            controlRight()
+                            if (isPlaying) {
+                                controlRight()
+                            }
                         }} onPressOut={() => {
                             handlePressOut(rightScale)
                             if (isPlaying) {
-                                controlForward()
+                                if (isReversing) {
+                                    controlReverse()
+                                } else {
+                                    controlForward()
+                                }
                             } else {
                                 controlStop()
                             }
@@ -176,14 +189,20 @@ const Control = () => {
                             onPressIn={() => {
                                 handlePressIn(reverseScale, !isReversing ? "Reversing" : "Forward")
                                 if(!isReversing) {
-                                    controlReverse()
+                                    if(isPlaying) {
+                                        controlReverse()
+                                    }
                                 } else {
-                                    controlForward()
+                                    if(isPlaying) {
+                                        controlForward()
+                                    }
                                 }
                             }}
                             onPressOut={() => {
                                 handlePressOut(reverseScale);
-                                toggleForwardReverse();
+                                if (isPlaying) {
+                                    toggleForwardReverse();
+                                }
                             }}
                         >
                             <Animated.View style={[styles.controlButton, { transform: [{ scale: reverseScale }] }]}>
@@ -195,14 +214,6 @@ const Control = () => {
                             </Animated.View>
                         </Pressable>
                         </View>
-                    {/* Return to Base Button */}
-                    <TouchableOpacity
-                        style={[styles.returnButton, { backgroundColor: isActive ? "#ff3b30" : "#32CD32" }]}
-                        onPress={toggleBoatActivity}
-                    >
-                        {isActive ? <CircleStop color="white" size={24} /> : <CornerDownLeft color="white" size={24} />}
-                        <Text style={styles.returnButtonText}>{isActive ? "Returning" : "Return to Base"}</Text>
-                    </TouchableOpacity>
                 </View>
                 </View>
                 </ScrollView>

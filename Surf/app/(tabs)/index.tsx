@@ -3,9 +3,13 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } fr
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { IP_ADDRESS, IP_ADDRESS_SOCKET } from "@/constants/IP"
+import { io } from "socket.io-client"
 
 // Define boat states as an enum for better type safety
 type BoatState = "idle" | "patrolling" | "control"
+
+const socket = io(IP_ADDRESS_SOCKET);
 
 export default function BoatCommand() {
   // Use a string state instead of boolean to handle multiple states
@@ -19,8 +23,43 @@ export default function BoatCommand() {
     // Set initial state when activating
     if (newActiveState) {
       setBoatState("patrolling")
+      fetch(`${IP_ADDRESS}/status`, { // Ensure the correct endpoint
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ mode: "patrol" }),
+                })
+                  .then((response) => {
+                    if (!response.ok) {
+                      return response.text().then((text) => {
+                        throw new Error(`HTTP Error ${response.status}: ${text}`);
+                      });
+                    }
+                    return response.json();
+                  })
+                  .then((data) => console.log("Server Response:", data))
+                  .catch((error) => console.error("Fetch Error:", error));
     } else {
       setBoatState("idle")
+      fetch(`${IP_ADDRESS}/status`, { // Ensure the correct endpoint
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mode: "idle" }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            return response.text().then((text) => {
+              throw new Error(`HTTP Error ${response.status}: ${text}`);
+            });
+          }
+          return response.json();
+        })
+        .then((data) => console.log("Server Response:", data))
+        .catch((error) => console.error("Fetch Error:", error));
+      socket.emit('force_stop');
     }
   }
 
@@ -122,7 +161,7 @@ export default function BoatCommand() {
         </View>
 
         {/* Weight Sensor Card */}
-        <View style={styles.card}>
+        {/* <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.statusContainer}>
               <MaterialCommunityIcons name="weight" size={20} color="#0056a6" />
@@ -136,7 +175,7 @@ export default function BoatCommand() {
           <TouchableOpacity style={styles.loadButton}>
             <Text style={styles.loadButtonText}>Load Detected</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </View>
       </ScrollView>
     </SafeAreaView>
