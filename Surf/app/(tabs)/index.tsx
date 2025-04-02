@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } fr
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { IP_ADDRESS, IP_ADDRESS_SOCKET } from "@/constants/IP"
+import { IP_ADDRESS, IP_ADDRESS_SOCKET } from "../../constants/IP"
 import { io } from "socket.io-client"
 
 // Define boat states as an enum for better type safety

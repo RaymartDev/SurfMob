@@ -1,10 +1,11 @@
-import { View, Text, StatusBar, StyleSheet, TouchableOpacity, Animated, Pressable, Image, ScrollView } from 'react-native';
-import { useState, useRef, useCallback } from 'react';
-import { CornerDownLeft, CircleStop, CirclePlay, ArrowBigLeft, ArrowBigRight, ArrowBigDown, ArrowBigUp } from 'lucide-react-native';
+import { View, Text, StatusBar, StyleSheet, Animated, Pressable, Image, ScrollView } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { CircleStop, CirclePlay, ArrowBigLeft, ArrowBigRight, ArrowBigDown, ArrowBigUp } from 'lucide-react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { io } from "socket.io-client";
-import { IP_ADDRESS, IP_ADDRESS_SOCKET } from '@/constants/IP';
+import { IP_ADDRESS, IP_ADDRESS_SOCKET } from '../../constants/IP';
 import { useFocusEffect } from 'expo-router';
+import LiveStream from '../../components/LiveStream';
 
 // Initialize Socket.IO connection (update with Raspberry Pi's IP)
 const socket = io(IP_ADDRESS_SOCKET);
@@ -102,12 +103,7 @@ const Control = () => {
                 </View>
                 <View style={styles.content}>
                 {/* Live Video Streaming */}
-                <View style={styles.videoContainer}>
-                    <Image 
-                        source={Stream} 
-                        style={styles.video}
-                        />
-                </View>
+                <LiveStream />
 
                 {/* Control Buttons */}
                 <View style={styles.controlsContainer}>
@@ -242,18 +238,6 @@ const styles = StyleSheet.create({
         fontFamily: "Poppins-Bold",
         marginLeft: 12,
         color: "white",
-    },
-    videoContainer: {
-        width: "100%",
-        height: "60%",
-        backgroundColor: "black",
-        borderRadius: 40,
-    },
-    video: {
-        width: "100%",
-        height: "100%",
-        backgroundColor: "black",
-        borderRadius: 40,
     },
     controlsContainer: {
         backgroundColor: 'transparent',

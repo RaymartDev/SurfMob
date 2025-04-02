@@ -1,10 +1,9 @@
 import { Tabs } from "expo-router"
 import { StyleSheet } from "react-native"
-import { HapticTab } from "@/components/HapticTab"
+import { HapticTab } from "../../components/HapticTab"
 import { useColorScheme } from "react-native"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { IP_ADDRESS } from "@/constants/IP"
 
 export default function TabLayout() {
   const colorScheme = useColorScheme()
@@ -29,13 +28,6 @@ export default function TabLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="simulation"
-        options={{
-          title: "Explore",
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="cube-outline" size={24} color={color} />,
-        }}
-      />
       <Tabs.Screen
         name="index"
         options={{
